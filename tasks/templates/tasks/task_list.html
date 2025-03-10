@@ -2,24 +2,91 @@
 
 {% block content %}
     <div class="search-container">
-        <form method="get" action="{% url 'task_list' %}">
-            <input type="text" name="search" placeholder="Search tasks by title..." value="{{ search_query }}">
-            <button type="submit" class="btn">Search</button>
-            {% if search_query %}
-                <a href="{% url 'task_list' %}" class="btn btn-secondary">Clear</a>
-            {% endif %}
+        <form method="get" action="{% url 'task_list' %}" class="search-form">
+            <div class="search-row">
+                <div class="search-input-group">
+                    <input type="text" name="search" placeholder="Search by title or description..." value="{{ search_query }}" class="search-input">
+                </div>
+                
+                <div class="filter-group">
+                    <select name="status" class="filter-select">
+                        <option value="" {% if status_filter == '' %}selected{% endif %}>All Statuses</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="not_completed" {% if status_filter == 'not_completed' %}selected{% endif %}>Not Completed</option>
+                        <option value="Overdue" {% if status_filter == 'Overdue' %}selected{% endif %}>Overdue</option>
+                        <option value="Due Today" {% if status_filter == 'Due Today' %}selected{% endif %}>Due Today</option>
+                        <option value="Upcoming" {% if status_filter == 'Upcoming' %}selected{% endif %}>Upcoming</option>
+                    </select>
+                
+                    <select name="sort" class="filter-select">
+                        <option value="due_date" {% if sort_by == 'due_date' %}selected{% endif %}>Sort by Due Date</option>
+                        <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Sort by Title</option>
+                        <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Sort by Status</option>
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Sort by Newest</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    {% if search_query or status_filter != '' or sort_by != 'due_date' %}
+                        <a href="{% url 'task_list' %}" class="btn btn-secondary">Reset Filters</a>
+                    {% endif %}
+                </div>
+            </div>
         </form>
     </div>
 
+    <div class="search-status">
+        {% if search_query or status_filter %}
+            <div class="filter-summary">
+                {% if search_query %}
+                    <span class="filter-tag">Search: "{{ search_query }}"</span>
+                {% endif %}
+                
+                {% if status_filter %}
+                    <span class="filter-tag">
+                        Status: 
+                        {% if status_filter == 'completed' %}
+                            Completed
+                        {% elif status_filter == 'not_completed' %}
+                            Not Completed
+                        {% else %}
+                            {{ status_filter }}
+                        {% endif %}
+                    </span>
+                {% endif %}
+                
+                {% if sort_by != 'due_date' %}
+                    <span class="filter-tag">
+                        Sorted by: 
+                        {% if sort_by == 'title' %}
+                            Title
+                        {% elif sort_by == 'status' %}
+                            Status
+                        {% elif sort_by == 'created_at' %}
+                            Newest First
+                        {% endif %}
+                    </span>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <p class="results-count">Found {{ tasks|length }} task{{ tasks|length|pluralize }}</p>
+    </div>
+
     <div class="task-list">
-        <h2>All Tasks</h2>
+        <h2>Tasks</h2>
         {% if tasks %}
             {% for task in tasks %}
-                <div class="task-item {% if task.status == 'Overdue' %}overdue{% elif task.status == 'Due Today' %}due-today{% else %}upcoming{% endif %}">
-                    <h3>{{ task.title }}</h3>
+                <div class="task-item {% if task.status == 'Overdue' %}overdue{% elif task.status == 'Due Today' %}due-today{% else %}upcoming{% endif %} {% if task.completed %}completed{% endif %}">
+                    <form method="post" action="{% url 'toggle_complete' task.pk %}" class="complete-form">
+                        {% csrf_token %}
+                        <input type="checkbox" onchange="this.form.submit()" {% if task.completed %}checked{% endif %}>
+                    </form>
+                    <h3 {% if task.completed %}class="completed-text"{% endif %}>{{ task.title }}</h3>
                     <p>{{ task.description|truncatechars:100 }}</p>
                     <p>Due Date: {{ task.due_date }}<br>Status: {{ task.status }}</p>
-                    <div>
+                    <div class="task-actions">
                         <a href="{% url 'task_detail' task.pk %}" class="btn">View</a>
                         <a href="{% url 'task_update' task.pk %}" class="btn">Edit</a>
                         <a href="{% url 'task_delete' task.pk %}" class="btn btn-danger">Delete</a>
@@ -27,7 +94,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <p>No tasks available.</p>
+            <p class="no-tasks">No tasks found matching your criteria.</p>
         {% endif %}
     </div>
 {% endblock %}
