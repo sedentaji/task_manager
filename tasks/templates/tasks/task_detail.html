@@ -1,0 +1,17 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+    <div class="task-item {% if task.status == 'Overdue' %}overdue{% elif task.status == 'Due Today' %}due-today{% else %}upcoming{% endif %}">
+        <h2>{{ task.title }}</h2>
+        <p><strong>Description:</strong> {{ task.description }}</p>
+        <p><strong>Due Date:</strong> {{ task.due_date }}</p>
+        <p><strong>Status:</strong> {{ task.status }}</p>
+        <p><strong>Created:</strong> {{ task.created_at }}</p>
+        <p><strong>Last Updated:</strong> {{ task.updated_at }}</p>
+        <div>
+            <a href="{% url 'task_list' %}" class="btn">Back to List</a>
+            <a href="{% url 'task_update' task.pk %}" class="btn">Edit</a>
+            <a href="{% url 'task_delete' task.pk %}" class="btn btn-danger">Delete</a>
+        </div>
+    </div>
+{% endblock %}
